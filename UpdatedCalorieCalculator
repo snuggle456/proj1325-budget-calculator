@@ -1,0 +1,305 @@
+import java.util.Scanner;
+
+class UserInput
+{
+    private Scanner input = new Scanner(System.in);
+
+    private String name;
+    private int age;
+    private char gender;
+    private double weight;   // stored in kg
+    private double height;   // stored in cm
+    private int activityLevel;
+    private int goal;
+    private int unitChoice;  // 1 = Imperial, 2 = Metric
+
+    public void collectUserInfo()
+    {
+        System.out.println("=====================================");
+        System.out.println("Welcome to the Calorie Budget Calculator!");
+        System.out.println("=====================================");
+        System.out.println("Let's start by collecting some basic information.\n");
+
+        System.out.print("Enter your name: ");
+        name = input.nextLine();
+
+        //  Unit selection
+        while (true)
+        {
+            System.out.println("\nChoose your measurement system:");
+            System.out.println("1. Imperial (lbs, inches)");
+            System.out.println("2. Metric (kg, cm)");
+            System.out.print("Enter your choice (1 or 2): ");
+            if (input.hasNextInt())
+            {
+                unitChoice = input.nextInt();
+                if (unitChoice == 1 || unitChoice == 2) break;
+                else System.out.println("  Please enter 1 for Imperial or 2 for Metric.");
+            } else
+            {
+                System.out.println("  Invalid input! Please enter a number.");
+                input.next();
+            }
+        }
+
+        // Age input with validation loop
+        while (true)
+        {
+            System.out.print("\nEnter your age (16+) ");
+            if (input.hasNextInt())
+            {
+                age = input.nextInt();
+                if (age >= 16) break;
+                else System.out.println("Invalid Age! Please enter a valid age: (16+) ");
+            }
+            else
+            {
+                System.out.println("  Invalid input! Please enter a number.");
+                input.next();
+            }
+        }
+
+        while (true)
+        {
+            System.out.print("Enter your gender (M/F): ");
+            String inputStr = input.next();
+
+            if (inputStr.length() > 0)
+            {
+                gender = Character.toUpperCase(inputStr.charAt(0)); // normalize to uppercase
+                if (gender == 'M' || gender == 'F')
+                {
+                    break;
+                }
+            }
+            System.out.println("Invalid input! Please enter 'M' or 'F'.");
+        }
+
+        // Weight + Height with unit handling
+        if (unitChoice == 1)
+        { // Imperial
+            System.out.print("Enter your weight (lbs): ");
+            double pounds = input.nextDouble();
+            weight = pounds * 0.453592; // convert to kg
+
+            System.out.print("Enter your height (inches): ");
+            double inches = input.nextDouble();
+            height = inches * 2.54; // convert to cm
+        }
+        else
+        { // Metric
+            System.out.print("Enter your weight (kg): ");
+            weight = input.nextDouble();
+
+            System.out.print("Enter your height (cm): ");
+            height = input.nextDouble();
+        }
+
+        //  Activity Level; will be used to determine resting calories
+        while (true)
+        {
+            System.out.println("\nSelect your activity level:");
+            System.out.println("1. Sedentary");
+            System.out.println("2. Lightly active");
+            System.out.println("3. Moderately active");
+            System.out.println("4. Very active");
+            System.out.print("Choice: ");
+            if (input.hasNextInt())
+            {
+                activityLevel = input.nextInt();
+                if (activityLevel >= 1 && activityLevel <= 4) break;
+                else System.out.println("  Please choose a number between 1 and 4.");
+            }
+            else
+            {
+                System.out.println("  Invalid input! Please enter a number.");
+                input.next();
+            }
+        }
+
+        //  Goal selection , number tied to desired outcome
+        while (true)
+        {
+            System.out.println("\nHow fast do you want to lose weight?");
+            System.out.println("1. 0.5 lb per week");
+            System.out.println("2. 1.0 lb per week");
+            System.out.println("3. 1.5 lb per week");
+            System.out.println("4. 2.0 lb per week");
+            System.out.print("Choice: ");
+
+            if (input.hasNextInt())
+            {
+                goal = input.nextInt();
+                if (goal >= 1 && goal <= 4) break;
+                else System.out.println(" Please choose a goal from 1-4.");
+            }
+            else
+            {
+                System.out.println(" Invalid input! Please enter a number.");
+                input.next();
+            }
+        }
+
+        System.out.println("\nThanks, " + name + "! Passing your data to the calculator...\n");
+    }
+    // Getters
+    //these will allow collaborators to obtain fields in this file
+    public String getName()
+    {
+        return name;
+    }
+
+    public int getAge()
+    {
+        return age;
+    }
+
+    public char getGender()
+    {
+        return gender;
+    }
+
+    public double getWeight()
+    {
+        return weight;
+    }
+
+    public double getHeight()
+    {
+        return height;
+    }
+
+    public int getActivityLevel()
+    {
+        return activityLevel;
+    }
+
+    public int getGoal()
+    {
+        return goal;
+    }
+
+    public int getUnitChoice()
+    {
+        return unitChoice;
+    }
+}
+
+// Everything in this class helps calculate the calories needed, from the user input to the resting rate of burning calories to natural metabolism.
+class CalorieCalculator
+    {
+        private UserInput user;
+
+        public CalorieCalculator (UserInput user)
+        {
+            this.user = user;
+        }
+
+        //calculates the natural human body metabolic rate and factors in to the amount of calories needed
+        public double calculateMetabolicRate()
+        {
+            double userWeight = user.getWeight();
+            double userHeight = user.getHeight();
+            int userAge= user.getAge();
+            char userGender = user.getGender();
+
+            double metabolicRate = 0;
+
+            if (userGender == 'M')
+            {
+                metabolicRate = (10 * userWeight) + (6.25 * userHeight) - (5 * userAge) + 5;
+            }
+            else if (userGender == 'F')
+            {
+                metabolicRate = (10 * userWeight) + (6.25 * userHeight) - (5 * userAge) - 161;
+            }
+
+            return metabolicRate;
+        }
+
+        //makes factors relating to the users inputted daily activity level so that it can burn those calories off the final value
+        public double dailyEnergyUsed() {
+            double metabolicRate = calculateMetabolicRate();
+            int activityLevel = user.getActivityLevel();
+            double burningRate = 1.0;
+
+            if (activityLevel == 1) {
+                burningRate = 1.2;
+            } else if (activityLevel == 2) {
+                burningRate = 1.375;
+            } else if (activityLevel == 3) {
+                burningRate = 1.55;
+            } else if (activityLevel == 4) {
+                burningRate = 1.725;
+            }
+
+            return metabolicRate * burningRate;
+        }
+
+        // sets the daily defict that the user needs to lose there specifcied weight ( the level 1-4 they picked)
+        public double getDailyDeficit()
+        {
+            int weightLossSpeed = user.getGoal();
+
+            if (weightLossSpeed == 1)
+            {
+                return 250;
+            }
+            if (weightLossSpeed == 2)
+            {
+                return 500;
+            }
+            if (weightLossSpeed == 3)
+            {
+                return 750;
+            }
+            if (weightLossSpeed == 4)
+            {
+                return 1000;
+            }
+
+            return 0;
+        }
+
+        //used for the main block when it prints out how much lbs per week they want to lose
+        public double getPoundsPerWeek()
+        {
+            int speed = user.getGoal();
+
+            if (speed == 1) return 0.5;
+            if (speed == 2) return 1.0;
+            if (speed == 3) return 1.5;
+            if (speed == 4) return 2.0;
+
+            return 0;
+        }
+
+
+        // officially calculates their daily calorie intake
+        public double calculateDailyCalorieIntake()
+        {
+            double energyUsed = dailyEnergyUsed();
+            double deficit = getDailyDeficit();
+
+            return energyUsed - deficit;
+        }
+
+    }
+
+class Main
+{
+    public static void main(String[] args)
+    {
+        UserInput user = new UserInput();
+        user.collectUserInfo();
+
+        CalorieCalculator usage = new CalorieCalculator(user);
+
+        double dailyCalories = usage.calculateDailyCalorieIntake();
+        double poundsPerWeek = usage.getPoundsPerWeek();
+
+        System.out.println("===================================================");
+        System.out.println("Your daily max calorie intake to lose " + poundsPerWeek + " lbs per week is: "  + (int)dailyCalories + " calories.");
+        System.out.println("===================================================");
+    }
+}
